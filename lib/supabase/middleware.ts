@@ -43,6 +43,12 @@ export async function updateSession(request: NextRequest) {
 
     // Skip auth checks in mock mode for testing
     if (isMockMode()) {
+        // In mock mode, still redirect root to dashboard
+        if (request.nextUrl.pathname === '/') {
+            const url = request.nextUrl.clone();
+            url.pathname = '/dashboard';
+            return NextResponse.redirect(url);
+        }
         return supabaseResponse;
     }
 
@@ -75,6 +81,13 @@ export async function updateSession(request: NextRequest) {
     if (isAuthPath && user) {
         const url = request.nextUrl.clone();
         url.pathname = '/dashboard';
+        return NextResponse.redirect(url);
+    }
+
+    // Handle root path redirect
+    if (request.nextUrl.pathname === '/') {
+        const url = request.nextUrl.clone();
+        url.pathname = user ? '/dashboard' : '/login';
         return NextResponse.redirect(url);
     }
 
