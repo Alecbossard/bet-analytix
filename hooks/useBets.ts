@@ -73,6 +73,44 @@ export function useBets() {
     }, [supabase]);
 
     /**
+     * Fetch a single bet by ID with all relations
+     */
+    const getBetById = useCallback(async (betId: string): Promise<ApiResponse<BetWithLegs>> => {
+        if (!supabase) {
+            return { data: null, error: 'Supabase not configured', success: false };
+        }
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            const { data, error: supabaseError } = await supabase
+                .from('bets')
+                .select(`
+                    *,
+                    bet_legs (*),
+                    bankroll:bankrolls (name, currency),
+                    bookmaker:bookmakers (name)
+                `)
+                .eq('id', betId)
+                .single();
+
+            if (supabaseError) {
+                setError(supabaseError.message);
+                return { data: null, error: supabaseError.message, success: false };
+            }
+
+            return { data: data as BetWithLegs, error: null, success: true };
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Failed to fetch bet';
+            setError(message);
+            return { data: null, error: message, success: false };
+        } finally {
+            setLoading(false);
+        }
+    }, [supabase]);
+
+    /**
      * Get sports list for dropdown
      */
     const getSports = useCallback(async (): Promise<ApiResponse<Sport[]>> => {
@@ -314,6 +352,7 @@ export function useBets() {
         loading,
         error,
         getBets,
+        getBetById,
         getSports,
         getBookmakers,
         createBet,
